@@ -2,8 +2,15 @@
 //Dislay: ILI9225 http://www.lcdwiki.com/2.2inch_Arduino_SPI_Module_ILI9225_SKU:MAR2201#Program_Download
 //Receiver: NRF24 https://microcontrollerelectronics.com/using-an-nrf24l01-module-to-scan-the-2-4ghz-frequency-range/
 
+//LCD related
 #include <LCDWIKI_GUI.h> //Core graphics library
 #include <LCDWIKI_SPI.h> //Hardware-specific library
+
+//NRF24 related
+#include <SPI.h>
+#include "nRF24L01.h"
+#include "RF24.h"
+#include "printf.h"
 
 //LCD pinout define
 #define MODEL ILI9225
@@ -37,13 +44,42 @@ LCDWIKI_SPI mylcd(MODEL,CS,CD,-1,SDA,RST,SCK,LED); //model,cs,dc,sdo,sda,reset,s
 #define YELLOW  0xFFE0
 #define WHITE   0xFFFF
 
-void setup() 
-{
-    mylcd.Init_LCD();
+//NRF24 configuration
+RF24 radio(NRF_CE,NRF_CSN);
+const uint8_t num_channels = 128;
+uint8_t values[num_channels];
+const int num_reps = 100;
+
+void setup(){
+  mylcd.Init_LCD();
+  
+  Serial.begin(115200);
+  printf_begin();
+  printf("\n\rRF24/examples/scanner/\n\r");
+
+  radio.begin();
+  radio.setAutoAck(false);
+
+  // Get into standby mode
+  radio.startListening();
+  radio.stopListening();
+
+  // Print out header, high then low digit
+  int i = 0;
+  while ( i < num_channels ){
+    printf("%x",i>>4);
+    ++i;
+  }
+  printf("\n\r");
+  i = 0;
+  while ( i < num_channels ){
+    printf("%x",i&0xf);
+    ++i;
+  }
+  printf("\n\r");
 }
 
-void h_l_lines_test(void)
-{
+void h_l_lines_test(void){
     int i=0;
     mylcd.Fill_Screen(BLACK);
     mylcd.Set_Draw_color(WHITE);
@@ -52,10 +88,42 @@ void h_l_lines_test(void)
     }
 }
 
-void loop() 
-{    
-    mylcd.Fill_Screen(WHITE);
-    delay(3000);
-    h_l_lines_test();
-    delay(3000);
+void loop(){    
+   // Clear measurement values
+  memset(values,0,sizeof(values));
+
+  // Scan all channels num_reps times
+  int rep_counter = num_reps;
+  while (rep_counter--){
+    int i = num_channels;
+    while (i--){
+      // Select this channel
+      radio.setChannel(i);
+
+      // Listen for a little
+      radio.startListening();
+      delayMicroseconds(225);
+      
+
+      // Did we get a carrier?
+      if ( radio.testCarrier() ){
+        ++values[i];
+      }
+      radio.stopListening();
+    }
+  }
+
+  // Print out channel measurements, clamped to a single hex digit
+  int i = 0;
+  while ( i < num_channels ){
+    printf("%x",min(0xf,values[i]&0xf));
+    ++i;
+  }
+  printf("\n\r");
+}
+void lcd_test(){
+  mylcd.Fill_Screen(WHITE);
+  delay(3000);
+  h_l_lines_test();
+  delay(3000);
 }
