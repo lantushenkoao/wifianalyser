@@ -30,6 +30,7 @@
 #define NRF_GND
 #define NRF_VSS
 
+//#define NRF_MAX_LEVEL 255
 //the definiens of software spi mode as follow:
 //if the IC model is known or the modules is unreadable,you can use this constructed function
 LCDWIKI_SPI mylcd(MODEL,CS,CD,-1,SDA,RST,SCK,LED); //model,cs,dc,sdo,sda,reset,sck,led
@@ -44,14 +45,39 @@ LCDWIKI_SPI mylcd(MODEL,CS,CD,-1,SDA,RST,SCK,LED); //model,cs,dc,sdo,sda,reset,s
 #define YELLOW  0xFFE0
 #define WHITE   0xFFFF
 
+#define LCD_WIDTH 220 //x
+#define LCD_HEIGHT 176 //y
+
+#define CHART_PADDING     10
+
 //NRF24 configuration
 RF24 radio(NRF_CE,NRF_CSN);
 const uint8_t num_channels = 128;
 uint8_t values[num_channels];
-const int num_reps = 100;
+const int num_reps = 25;
+
+const int lcd_chart_x_min = CHART_PADDING;
+const int lcd_chart_y_min = CHART_PADDING;
+
+const int lcd_chart_x_max = LCD_WIDTH  - lcd_chart_x_min - CHART_PADDING;
+const int lcd_chart_y_max = LCD_HEIGHT - lcd_chart_y_min - CHART_PADDING;
+
+const int lcd_chart_width  = LCD_WIDTH  - (CHART_PADDING * 2);
+const int lcd_chart_height = LCD_HEIGHT - (CHART_PADDING * 2);
+
+const double channel_width = (double)lcd_chart_width / (double)num_channels;
 
 void setup(){
   mylcd.Init_LCD();
+  mylcd.Set_Rotation(3);
+  mylcd.Fill_Screen(BLACK);
+  mylcd.Set_Text_Mode(0);
+  mylcd.Fill_Screen(BLACK);
+  mylcd.Set_Text_colour(WHITE);
+  mylcd.Set_Text_Back_colour(BLACK);
+  mylcd.Set_Text_Size(1);
+  mylcd.Print_String("Scainning 2.4GHz networks", 0, 0);
+  print_axis();
   
   Serial.begin(115200);
   printf_begin();
@@ -65,31 +91,28 @@ void setup(){
   radio.stopListening();
 
   // Print out header, high then low digit
-  int i = 0;
-  while ( i < num_channels ){
-    printf("%x",i>>4);
-    ++i;
-  }
-  printf("\n\r");
-  i = 0;
-  while ( i < num_channels ){
-    printf("%x",i&0xf);
-    ++i;
-  }
-  printf("\n\r");
+//  int i = 0;
+//  while ( i < num_channels ){
+//    printf("%x",i>>4);
+//    ++i;
+//  }
+//  printf("\n\r");
+//  i = 0;
+//  while ( i < num_channels ){
+//    printf("%x",i&0xf);
+//    ++i;
+//  }
+//  printf("\n\r");
 }
 
-void h_l_lines_test(void){
-    int i=0;
-    mylcd.Fill_Screen(BLACK);
-    mylcd.Set_Draw_color(WHITE);
-    for(i =0;i<mylcd.Get_Display_Height();i+=5){
-      mylcd.Draw_Fast_HLine(0,i,mylcd.Get_Display_Width()); 
-    }
-}
 
 void loop(){    
-   // Clear measurement values
+ //lcd_test();
+ test_nrf();
+}
+
+void test_nrf(){
+    // Clear measurement values
   memset(values,0,sizeof(values));
 
   // Scan all channels num_reps times
@@ -116,14 +139,42 @@ void loop(){
   // Print out channel measurements, clamped to a single hex digit
   int i = 0;
   while ( i < num_channels ){
-    printf("%x",min(0xf,values[i]&0xf));
+    print_channel(i, min(num_reps, values[i] * 5));
+    //printf("%x ; ",values[i]);
     ++i;
   }
-  printf("\n\r");
+  //printf("\n\r");
 }
+
 void lcd_test(){
-  mylcd.Fill_Screen(WHITE);
-  delay(3000);
-  h_l_lines_test();
-  delay(3000);
+
+  print_channel(1, 10);
+  print_channel(2, 50);
+  print_channel(3, 50);
+  print_channel(100, 20);
+  delay(1000);
+}
+
+void print_axis(){
+  mylcd.Set_Draw_color(WHITE);
+  mylcd.Draw_Fast_VLine(lcd_chart_x_min - 2, lcd_chart_y_min, lcd_chart_y_max - lcd_chart_y_min + 2); 
+  mylcd.Draw_Fast_HLine(lcd_chart_x_min - 2, lcd_chart_y_max + 2, lcd_chart_x_max - lcd_chart_x_min); 
+
+  //separate normal Wifi channels (1..16) with a white line
+  mylcd.Draw_Fast_VLine(lcd_chart_x_min + 16 * channel_width, lcd_chart_y_max, LCD_WIDTH - lcd_chart_y_max); 
+}
+
+void print_channel(int channelNo, int value){
+
+  
+  
+  //whipe up previous value
+  mylcd.Set_Draw_color(BLACK);
+  mylcd.Draw_Fast_VLine(lcd_chart_x_min + (channelNo * channel_width), lcd_chart_y_min, lcd_chart_y_max - lcd_chart_y_min); 
+  //draw new value
+  mylcd.Set_Draw_color(BLUE);
+  const int normalisedValue = lcd_chart_y_max - value * lcd_chart_height / num_reps;
+  const int barHeight = lcd_chart_y_max - normalisedValue;
+  const int barY = barHeight - value;
+  mylcd.Draw_Fast_VLine(lcd_chart_x_min + (channelNo * channel_width), normalisedValue, barHeight); 
 }
