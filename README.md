@@ -1,9 +1,33 @@
 # Wifi Analyser Project
 Project for scanning available Wifi networks, including hidden and out of range
 
-Built based on Arduino compatible Wemos D1 R2 board
 
-#IDE Setup instruction: 
+#2022-12-11 an attempt to use lgt8f328p-lqfp32 
+Project setup based on:
+# lgt8f328p-lqfp32 board (arduino compatible)
+	Setup instruction https://github.com/dbuezas/lgt8fx
+	Install it from Board manager!
+	(Mine is lgt8f328)
+
+# Display TFT LCD 2.2 SPI ILI9225
+	http://www.lcdwiki.com/2.2inch_Arduino_SPI_Module_ILI9225_SKU:MAR2201#Program_Download
+	
+	
+# NRF24 module
+	https://microcontrollerelectronics.com/using-an-nrf24l01-module-to-scan-the-2-4ghz-frequency-range/
+
+Conclusion: NRF24 will not work for the purpose because it does not actually measure singnal strength
+
+Next step is to try CYWM6935 http://vwlowen.co.uk/arduino/spectrum-analyser/page2.htm
+
+==================================================================================
+The rest of this document is a list of modules that participate in the experiment
+They are not used in the final version
+==================================================================================
+
+
+
+#IDE Setup instruction fofr WeMos: 
 https://www.instructables.com/Arduino-WeMos-D1-WiFi-UNO-ESP-8266-IoT-IDE-Compati/
 
 https://arduinomaster.ru/datchiki-arduino/esp8266-wemos-d1-mini-raspinovka/
@@ -12,7 +36,7 @@ https://arduinomaster.ru/datchiki-arduino/esp8266-wemos-d1-mini-raspinovka/
 http://arduino.esp8266.com/stable/package_esp8266com_index.json
 Then select Wemos D1 R2 in Tools->Board
 
-#TFT Screen setup instruction
+#TFT Screen setup instruction (SH1106)
 u2glib is not working with ESP
 
 Using Adafruit and Adafruit GFX
@@ -38,10 +62,3 @@ https://www.reddit.com/r/arduino/comments/oik5ou/wemos_d1_r2_nrf24l01/
 
 https://forum.arduino.cc/t/wemos-d1-pins/523831/15
 
-#2022-12-11 an attempt to use lgt8f328p-lqfp32 
-based on lgt8f328p-lqfp32 board (arduino compatible)
-Setup instruction https://github.com/dbuezas/lgt8fx
-Install it from Board manager!
-Mine is lgt8f328
-
-Display TFT LCD 2.2 SPI ILI9225

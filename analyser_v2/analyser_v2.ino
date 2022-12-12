@@ -54,7 +54,7 @@ LCDWIKI_SPI mylcd(MODEL,CS,CD,-1,SDA,RST,SCK,LED); //model,cs,dc,sdo,sda,reset,s
 RF24 radio(NRF_CE,NRF_CSN);
 const uint8_t num_channels = 128;
 uint8_t values[num_channels];
-const int num_reps = 25;
+const int num_reps = 15;
 
 const int lcd_chart_x_min = CHART_PADDING;
 const int lcd_chart_y_min = CHART_PADDING;
@@ -79,10 +79,6 @@ void setup(){
   mylcd.Print_String("Scainning 2.4GHz networks", 0, 0);
   print_axis();
   
-  Serial.begin(115200);
-  printf_begin();
-  printf("\n\rRF24/examples/scanner/\n\r");
-
   radio.begin();
   radio.setAutoAck(false);
 
@@ -90,19 +86,6 @@ void setup(){
   radio.startListening();
   radio.stopListening();
 
-  // Print out header, high then low digit
-//  int i = 0;
-//  while ( i < num_channels ){
-//    printf("%x",i>>4);
-//    ++i;
-//  }
-//  printf("\n\r");
-//  i = 0;
-//  while ( i < num_channels ){
-//    printf("%x",i&0xf);
-//    ++i;
-//  }
-//  printf("\n\r");
 }
 
 
@@ -125,7 +108,7 @@ void test_nrf(){
 
       // Listen for a little
       radio.startListening();
-      delayMicroseconds(225);
+      delayMicroseconds(255);
       
 
       // Did we get a carrier?
@@ -165,15 +148,13 @@ void print_axis(){
 }
 
 void print_channel(int channelNo, int value){
-
-  
-  
+ 
   //whipe up previous value
   mylcd.Set_Draw_color(BLACK);
   mylcd.Draw_Fast_VLine(lcd_chart_x_min + (channelNo * channel_width), lcd_chart_y_min, lcd_chart_y_max - lcd_chart_y_min); 
   //draw new value
   mylcd.Set_Draw_color(BLUE);
-  const int normalisedValue = lcd_chart_y_max - value * lcd_chart_height / num_reps;
+  const int normalisedValue = lcd_chart_y_max - value * (lcd_chart_height - CHART_PADDING)/ num_reps;
   const int barHeight = lcd_chart_y_max - normalisedValue;
   const int barY = barHeight - value;
   mylcd.Draw_Fast_VLine(lcd_chart_x_min + (channelNo * channel_width), normalisedValue, barHeight); 
